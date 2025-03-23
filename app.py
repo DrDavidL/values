@@ -1,15 +1,18 @@
 import streamlit as st
 from google import genai
+import io
+from docx import Document
 
 st.set_page_config(page_title="Value Cards App", page_icon="🔮", layout="wide")
 st.title("Value Cards App")
 st.write("Select your core values from each category below. Toggle the items you resonate with, and your tier 2 list will update on the right side.")
+
 with st.expander("About this App"):
     st.write(
         "This app helps you identify and organize your core values. "
         "Select your values from the list, then choose two core values to form buckets. "
-        "Finally, organize your values into the two buckets to generate your final statements."
-        "The draft statements at the end are generated using the [Gemini Language Model](https://aistudio.google.com/)."
+        "Finally, organize your values into the two buckets to generate your final statements. "
+        "The draft statements at the end are generated using the [Gemini Language Model](https://aistudio.google.com/). "
         "This app was authored by David Liebovitz, MD, and is open-source on [GitHub](https://github.com/DrDavidL/values)."
     )
     st.markdown("---")
@@ -80,7 +83,7 @@ final_selection = []
 
 col1, col3 = st.columns(2, gap="medium")
 with col1:
-    st.write("## Select Your Values")
+    st.write("## Step 1. Select Your Values")
     # Loop over each category and each value within the category.
     for category, values in categories.items():
         with st.expander(category):
@@ -101,8 +104,6 @@ with col3:
     else:
         st.info("No values selected yet.")
 
-
-
     if final_selection:
         st.write("## Step 2: Choose Two Values to Form Tier 1 Buckets")
         unique_values = sorted(set(final_selection))
@@ -112,42 +113,102 @@ with col3:
         )
         
         if len(selected_cores) == 2:
-            st.write("### Organize Your Tier 2 Values into  Your Tier 1 Buckets")
+            st.write("### Organize Your Tier 2 Values into Your Tier 1 Buckets")
             st.write("Assign each of your final values into one of the two buckets below.")
             
             bucket1 = st.multiselect(
                 f"Select values for bucket **{selected_cores[0]}**:", 
-                options=unique_values, key="bucket1"
+                options=unique_values, key="bucket1 choices"
             )
             bucket2 = st.multiselect(
                 f"Select values for bucket **{selected_cores[1]}**:", 
-                options=unique_values, key="bucket2"
+                options=unique_values, key="bucket2 choices"
             )
-            
-            # st.write("#### Bucket Organization")
-            # st.write(f"**{selected_cores[0]} Bucket:** {bucket1}")
-            # st.write(f"**{selected_cores[1]} Bucket:** {bucket2}")
-            
+            st.write("## Step 3. Draft Values Statements with Gemini")
             if st.button("Draft Values Statements"):
                 try:
-                    from google import genai
-                    
                     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
                     
                     statement1 = f"I value {selected_cores[0]} - " + ", ".join(bucket1)
                     statement2 = f"I value {selected_cores[1]} - " + ", ".join(bucket2)
                     
-                    response1 = client.models.generate_content(
+                    response = client.models.generate_content(
                         model="gemini-2.0-flash",
                         contents=f"""Rephrase each of the following statements to convey a draft essence of the user\'s core values. Return only numbered rephrased versions, not other comments or information.:
                         Statement 1: {statement1},
-                        Statement 2: {statement2}""",
+                        Statement 2: {statement2}"""
                     )
-                    st.write(f'1. {statement1}')
-                    st.write(f'2. {statement2}')
-                    st.write("### Draft Statements")
-                    st.write(response1.text)
+                    draft_statements = response.text.strip()
+                    st.session_state.draft_statements = draft_statements
+                    
+                    # Display original statements and the draft versions
+                    st.write("### Original Statements")
+                    st.write(f"1. {statement1}")
+                    st.write(f"2. {statement2}")
+                    
+                    # Save the draft statements and other info into session state for DOCX generation
+                    
+                    st.session_state.selected_cores = selected_cores
+                    st.session_state.bucket1 = bucket1
+                    st.session_state.bucket2 = bucket2
                 except Exception as e:
                     st.error(f"An error occurred during the LLM call: {e}")
         else:
             st.info("Please select exactly two core values to create your buckets.")
+    st.write("### Draft Statements")
+    st.write(st.session_state.draft_statements)
+    # Provide a download button if draft statements exist
+    if "draft_statements" in st.session_state:
+        def generate_docx():
+            document = Document()
+            document.add_heading("Value Cards Document", 0)
+
+            # Tier 2 Values Section
+            document.add_heading("Tier 2 Values List", level=1)
+            if st.session_state.final_selection:
+                for val in sorted(set(st.session_state.final_selection)):
+                    document.add_paragraph(val, style='List Bullet')
+            else:
+                document.add_paragraph("No Tier 2 values selected.")
+
+            # Tier 1 Buckets Section
+            document.add_heading("Tier 1 Buckets", level=1)
+            selected_cores = st.session_state.get("selected_cores", [])
+            bucket1 = st.session_state.get("bucket1", [])
+            bucket2 = st.session_state.get("bucket2", [])
+            if len(selected_cores) == 2:
+                document.add_heading(f"{selected_cores[0]} Bucket", level=2)
+                if bucket1:
+                    for val in bucket1:
+                        document.add_paragraph(val, style='List Bullet')
+                else:
+                    document.add_paragraph("No values assigned.")
+                
+                document.add_heading(f"{selected_cores[1]} Bucket", level=2)
+                if bucket2:
+                    for val in bucket2:
+                        document.add_paragraph(val, style='List Bullet')
+                else:
+                    document.add_paragraph("No values assigned.")
+            else:
+                document.add_paragraph("Tier 1 bucket details not available.")
+
+            # Draft Statements Section
+            document.add_heading("Draft Statements", level=1)
+            draft = st.session_state.get("draft_statements", "No draft statements generated.")
+            document.add_paragraph(draft)
+
+            # Save the document to a BytesIO buffer and return
+            buffer = io.BytesIO()
+            document.save(buffer)
+            buffer.seek(0)
+            return buffer
+
+        st.write("## Step 4. Download and Finalize Your Draft Statements")
+        docx_buffer = generate_docx()
+        st.download_button(
+            label="Download your DOCX file for final editing!",
+            data=docx_buffer,
+            file_name="Value_Cards_Document.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
