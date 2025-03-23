@@ -14,7 +14,7 @@ with st.expander("About this App"):
         "Where applicable, add Tier 2 values under your Tier 1 values to generate draft value statements. \n\n"
         "This app was authored by David Liebovitz, MD, and is open-source on [GitHub](https://github.com/DrDavidL/values)."
     )
-    st.info("If you have an optional API key for Gemini, AI versions of your value statements are re-phrased using the [Gemini Language Model](https://aistudio.google.com/). ")
+    st.info("If you have an optional API key for Gemini, AI versions of your value statements are re-phrased using the [Gemini Language Model](https://aistudio.google.com/): ")
     ai_enabled = st.checkbox("Enable AI Draft Statements", value=False)
     
     if ai_enabled:
