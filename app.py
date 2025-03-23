@@ -113,7 +113,7 @@ with col3:
         )
         
         if len(selected_cores) == 2:
-            st.write("### Select Tier 2 Values to complement your primary Tier 1 Values")
+            st.write("## Step 3: Select Tier 2 Values to complement your primary Tier 1 Values")
             st.write("Where it makes sense to you, add Tier 2 values to complement your Tier 1 Values.")
             
             bucket1 = st.multiselect(
@@ -124,7 +124,7 @@ with col3:
                 f"Select values for bucket **{selected_cores[1]}**:", 
                 options=unique_values, key="bucket2 choices"
             )
-            st.write("## Step 3. Draft Values Statements with AI Assistance")
+            st.write("## Step 4. Draft Values Statements with AI Assistance")
             if st.button("Draft Values Statements"):
                 try:
                     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
@@ -204,7 +204,7 @@ with col3:
             buffer.seek(0)
             return buffer
 
-        st.write("## Step 4. Download and Finalize Your Draft Statements")
+        st.write("## Step 5. Download and Finalize Your Draft Statements")
         docx_buffer = generate_docx()
         st.download_button(
             label="Download your DOCX file for final editing!",
