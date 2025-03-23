@@ -5,13 +5,13 @@ from docx import Document
 
 st.set_page_config(page_title="Value Cards App", page_icon="🔮", layout="wide")
 st.title("Value Cards App")
-st.write("Select your core values from each category below. Toggle the items you resonate with, and your tier 2 list will update on the right side.")
+st.write("Select your core values from each category below. Toggle the items you resonate with, and your Tier 2 values will update on the right side.")
 
 with st.expander("About this App"):
     st.write(
         "This app helps you identify and organize your core values. "
-        "Select your values from the list, then choose two core values to form buckets. "
-        "Finally, organize your values into the two buckets to generate your final statements. "
+        "Select your Tier 2 values from the list, then refine to your two Tier 1 values. "
+        "Where applicable, add Tier 2 values under your Tier 1 values to generate draft value statements. "
         "The draft statements at the end are generated using the [Gemini Language Model](https://aistudio.google.com/). "
         "This app was authored by David Liebovitz, MD, and is open-source on [GitHub](https://github.com/DrDavidL/values)."
     )
