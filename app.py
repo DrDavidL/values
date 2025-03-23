@@ -15,7 +15,13 @@ with st.expander("About this App"):
         "The draft statements at the end are generated using the [Gemini Language Model](https://aistudio.google.com/). "
         "This app was authored by David Liebovitz, MD, and is open-source on [GitHub](https://github.com/DrDavidL/values)."
     )
-    st.markdown("---")
+    ai_enabled = st.checkbox("Enable AI Draft Statements", value=False)
+    if ai_enabled:
+        # Check if the key exists in the secrets file
+        if "GEMINI_API_KEY" in st.secrets:
+            api_key = st.secrets["GEMINI_API_KEY"]
+        else:
+            api_key = st.text_input("Enter your Gemini API Key:")
     st.markdown(
         "**Sources:** This app’s values list is based on curated items from "
         "[James Clear](https://jamesclear.com/core-values), "
@@ -124,41 +130,44 @@ with col3:
                 f"Select values for bucket **{selected_cores[1]}**:", 
                 options=unique_values, key="bucket2 choices"
             )
-            st.write("## Step 4. Draft Values Statements with AI Assistance")
-            if st.button("Draft Values Statements"):
-                try:
-                    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-                    
-                    statement1 = f"I value {selected_cores[0]} - " + ", ".join(bucket1)
-                    statement2 = f"I value {selected_cores[1]} - " + ", ".join(bucket2)
-                    
-                    response = client.models.generate_content(
-                        model="gemini-2.0-flash",
-                        contents=f"""Rephrase each of the following statements to convey a draft essence of the user\'s core values. Return only numbered rephrased versions, not other comments or information.:
-                        Statement 1: {statement1},
-                        Statement 2: {statement2}"""
-                    )
-                    draft_statements = response.text.strip()
-                    st.session_state.draft_statements = draft_statements
-                    
-                    # Display original statements and the draft versions
-                    st.write("### Original Statements")
-                    st.write(f"1. {statement1}")
-                    st.write(f"2. {statement2}")
-                    
-                    # Save the draft statements and other info into session state for DOCX generation
-                    
-                    st.session_state.selected_cores = selected_cores
-                    st.session_state.bucket1 = bucket1
-                    st.session_state.bucket2 = bucket2
-                except Exception as e:
-                    st.error(f"An error occurred during the LLM call: {e}")
-        else:
-            st.info("Please select exactly two core values to create your buckets.")
-    st.write("### Draft Statements")
-    st.write(st.session_state.draft_statements)
+            
+            statement1 = f"I value {selected_cores[0]} supported by " + ", ".join(bucket1)
+            statement2 = f"I value {selected_cores[1]} supported by " + ", ".join(bucket2)
+            # Display draft statements
+            st.write("## Step 4. View Draft Values Statements")
+            st.write(f"### 1. {statement1}")
+            st.write(f"### 2. {statement2}")
+            st.session_state.draft_statements = f"1. {statement1}\n2. {statement2}"
+            
+            # Save the draft statements and other info into session state for DOCX generation
+            
+            st.session_state.selected_cores = selected_cores
+            st.session_state.bucket1 = bucket1
+            st.session_state.bucket2 = bucket2
+            if ai_enabled:
+                if st.button("Draft AI Enhanced Values Statements"):
+                    try:
+                        client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+                                               
+                        response = client.models.generate_content(
+                            model="gemini-2.0-flash",
+                            contents=f"""Rephrase each of the following statements to convey a draft essence of the user\'s core values. Return only numbered rephrased versions, not other comments or information.:
+                            Statement 1: {statement1},
+                            Statement 2: {statement2}"""
+                        )
+                        draft_statements = response.text.strip()
+                        st.session_state.ai_draft_statements = draft_statements                 
+
+                    except Exception as e:
+                        st.error(f"An error occurred during the LLM call: {e}")
+                else:
+                    st.info("Please select exactly two core values to create your buckets.")
+                if st.session_state.get("ai_draft_statements"):
+                    st.write("### AI Enhanced Statements")
+                    st.write(st.session_state.ai_draft_statements)     
+
     # Provide a download button if draft statements exist
-    if "draft_statements" in st.session_state:
+    if "draft_statements" in st.session_state or "ai_draft_statements" in st.session_state:
         def generate_docx():
             document = Document()
             document.add_heading("Value Cards Document", 0)
@@ -197,14 +206,18 @@ with col3:
             document.add_heading("Draft Statements", level=1)
             draft = st.session_state.get("draft_statements", "No draft statements generated.")
             document.add_paragraph(draft)
-
+            if ai_enabled:
+                ai = st.session_state.get("ai_draft_statements", "No AI draft statements generated.")
+                document.add_heading("AI Enhanced Draft Statements", level=2)
+                document.add_paragraph(ai)                      
+            
             # Save the document to a BytesIO buffer and return
             buffer = io.BytesIO()
             document.save(buffer)
             buffer.seek(0)
             return buffer
 
-        st.write("## Step 5. Download and Finalize Your Draft Statements")
+        st.write("## Step 5. Download to Save and Finalize Your Draft Statements")
         docx_buffer = generate_docx()
         st.download_button(
             label="Download your DOCX file for final editing!",
