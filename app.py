@@ -105,16 +105,16 @@ with col3:
         st.info("No values selected yet.")
 
     if final_selection:
-        st.write("## Step 2: Choose Two Values to Form Tier 1 Buckets")
+        st.write("## Step 2: Choose Two Values as your Tier 1 Values")
         unique_values = sorted(set(final_selection))
         selected_cores = st.multiselect(
-            "Select two core values from your tier 2 list to form your two tier 1 buckets:",
+            "Select two core values from your Tier 2 list as your two Tier 1 Values:",
             options=unique_values, key="core_values", max_selections=2
         )
         
         if len(selected_cores) == 2:
-            st.write("### Organize Your Tier 2 Values into Your Tier 1 Buckets")
-            st.write("Assign each of your final values into one of the two buckets below.")
+            st.write("### Select Tier 2 Values to complement your primary Tier 1 Values")
+            st.write("Where it makes sense to you, add Tier 2 values to complement your Tier 1 Values.")
             
             bucket1 = st.multiselect(
                 f"Select values for bucket **{selected_cores[0]}**:", 
@@ -124,7 +124,7 @@ with col3:
                 f"Select values for bucket **{selected_cores[1]}**:", 
                 options=unique_values, key="bucket2 choices"
             )
-            st.write("## Step 3. Draft Values Statements with Gemini")
+            st.write("## Step 3. Draft Values Statements with AI Assistance")
             if st.button("Draft Values Statements"):
                 try:
                     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
@@ -172,19 +172,19 @@ with col3:
                 document.add_paragraph("No Tier 2 values selected.")
 
             # Tier 1 Buckets Section
-            document.add_heading("Tier 1 Buckets", level=1)
+            document.add_heading("Tier 1 Values", level=1)
             selected_cores = st.session_state.get("selected_cores", [])
             bucket1 = st.session_state.get("bucket1", [])
             bucket2 = st.session_state.get("bucket2", [])
             if len(selected_cores) == 2:
-                document.add_heading(f"{selected_cores[0]} Bucket", level=2)
+                document.add_heading(f"{selected_cores[0]} with:", level=2)
                 if bucket1:
                     for val in bucket1:
                         document.add_paragraph(val, style='List Bullet')
                 else:
                     document.add_paragraph("No values assigned.")
                 
-                document.add_heading(f"{selected_cores[1]} Bucket", level=2)
+                document.add_heading(f"{selected_cores[1]} with:", level=2)
                 if bucket2:
                     for val in bucket2:
                         document.add_paragraph(val, style='List Bullet')
