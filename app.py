@@ -18,6 +18,7 @@ with st.expander("About this App"):
     ai_enabled = st.checkbox("Enable AI Draft Statements", value=False)
     if ai_enabled:
         # Check if the key exists in the secrets file
+        api_key = None
         if "GEMINI_API_KEY" in st.secrets:
             api_key = st.secrets["GEMINI_API_KEY"]
         else:
@@ -147,7 +148,7 @@ with col3:
             if ai_enabled:
                 if st.button("Draft AI Enhanced Values Statements"):
                     try:
-                        client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+                        client = genai.Client(api_key=api_key)
                                                
                         response = client.models.generate_content(
                             model="gemini-2.0-flash",
