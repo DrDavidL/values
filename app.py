@@ -9,7 +9,7 @@ st.write("Select your core values from each category below. Toggle the items you
 
 with st.expander("About this App"):
     st.write(
-        "This app helps you identify and organize your core values. \n"
+        "This app helps you identify and organize your core values. \n\n"
         "Select your Tier 2 values from the list, then refine to only **two** Tier 1 values. (Not easy!) "
         "Where applicable, add Tier 2 values under your Tier 1 values to generate draft value statements. "
         "If you have an optional API key for Gemini, AI versions of your value statements are re-phrased using the [Gemini Language Model](https://aistudio.google.com/). "
