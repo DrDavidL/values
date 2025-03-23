@@ -12,7 +12,7 @@ with st.expander("About this App"):
         "This app helps you identify and organize your core values. \n\n"
         "Select your Tier 2 values from the list, then refine to only **two** Tier 1 values. (Not easy!) \n"
         "Where applicable, add Tier 2 values under your Tier 1 values to generate draft value statements. "
-        "If you have an optional API key for Gemini, AI versions of your value statements are re-phrased using the [Gemini Language Model](https://aistudio.google.com/). "
+        "If you have an optional API key for Gemini, AI versions of your value statements are re-phrased using the [Gemini Language Model](https://aistudio.google.com/). \n\n"
         "This app was authored by David Liebovitz, MD, and is open-source on [GitHub](https://github.com/DrDavidL/values)."
     )
     ai_enabled = st.checkbox("Enable AI Draft Statements", value=False)
