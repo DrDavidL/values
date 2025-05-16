@@ -170,13 +170,16 @@ with col3:
             st.write("## Step 3: Select Tier 2 Values to complement your primary Tier 1 Values")
             st.write("Where it makes sense to you, add Tier 2 values to complement your Tier 1 Values.")
             
+            # Filter out Tier 1 values from the Tier 2 selection options
+            tier2_options = [value for value in unique_values if value not in selected_cores]
+            
             bucket1 = st.multiselect(
                 f"Select values for bucket **{selected_cores[0]}**:", 
-                options=unique_values, key="bucket1 choices"
+                options=tier2_options, key="bucket1 choices"
             )
             bucket2 = st.multiselect(
                 f"Select values for bucket **{selected_cores[1]}**:", 
-                options=unique_values, key="bucket2 choices"
+                options=tier2_options, key="bucket2 choices"
             )
             
             statement1 = f"I value {selected_cores[0]} supported by " + ", ".join(bucket1)
