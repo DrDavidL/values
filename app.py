@@ -7,6 +7,60 @@ st.set_page_config(page_title="Value Cards App", page_icon="🔮", layout="wide"
 st.title("Value Cards App")
 st.write("Select your core values from each category below. Toggle the items you resonate with, and your Tier 2 values will update on the right side.")
 
+
+# Store your password securely in an environment variable or secrets.toml
+password_key = st.secrets["app"]["password"]
+api_key = st.secrets["GEMINI_API_KEY"]
+
+def check_password(widget_key_suffix="") -> bool:
+    """
+    Prompt for password entry with improved usability and robust feedback.
+    
+    Args:
+        widget_key_suffix: Suffix to ensure unique Streamlit widget keys.
+    Returns:
+        bool: True if password is correct, else False.
+    """
+    # Session state initialization
+    if "password_correct" not in st.session_state:
+        st.session_state.password_correct = False
+    if "login_attempts" not in st.session_state:
+        st.session_state.login_attempts = 0
+
+    password_key_name = f"password_{widget_key_suffix}"
+
+    def password_entered():
+        entered_password = st.session_state[password_key_name]
+        if entered_password == password_key:
+            st.session_state.password_correct = True
+            st.session_state.login_attempts = 0
+            # Optionally: st.success("Login successful!")
+        else:
+            st.session_state.password_correct = False
+            st.session_state.login_attempts += 1
+            st.session_state[password_key_name] = ""  # Reset entry field
+
+    if not st.session_state.password_correct:
+        st.text_input(
+            "Enter access password",
+            type="password",
+            key=password_key_name,
+            on_change=password_entered,
+            placeholder="Password",
+            help="Contact David Liebovitz, MD for access."
+        )
+
+        if st.session_state.login_attempts > 0:
+            st.error(
+                f"Incorrect password. Attempts: {st.session_state.login_attempts}"
+            )
+
+        st.caption(
+            "*If you need an updated access password, contact David Liebovitz, MD.*"
+        )
+        return False
+    return True
+
 with st.expander("About this App"):
     st.write(
         "This app helps you identify and organize your core values. \n\n"
@@ -15,15 +69,7 @@ with st.expander("About this App"):
         "This app was authored by David Liebovitz, MD, and is open-source on [GitHub](https://github.com/DrDavidL/values)."
     )
     st.info("If you have an optional API key for Gemini, AI versions of your value statements are re-phrased using the [Gemini Language Model](https://aistudio.google.com/): ")
-    ai_enabled = st.checkbox("Enable AI Draft Statements", value=False)
-    
-    if ai_enabled:
-        # Check if the key exists in the secrets file
-        api_key = None
-        if "GEMINI_API_KEY" in st.secrets:
-            api_key = st.secrets["GEMINI_API_KEY"]
-        else:
-            api_key = st.text_input("Enter your Gemini API Key:")
+
     st.markdown(
         "**Sources:** This app’s values list is based on curated items from "
         "[James Clear](https://jamesclear.com/core-values), "
@@ -146,27 +192,31 @@ with col3:
             st.session_state.selected_cores = selected_cores
             st.session_state.bucket1 = bucket1
             st.session_state.bucket2 = bucket2
-            if ai_enabled:
-                if st.button("Draft AI Enhanced Values Statements"):
-                    try:
-                        client = genai.Client(api_key=api_key)
-                                               
-                        response = client.models.generate_content(
-                            model="gemini-2.0-flash",
-                            contents=f"""Rephrase each of the following statements to convey a draft essence of the user\'s core values. Return only numbered rephrased versions, not other comments or information.:
-                            Statement 1: {statement1},
-                            Statement 2: {statement2}"""
-                        )
-                        draft_statements = response.text.strip()
-                        st.session_state.ai_draft_statements = draft_statements                 
+            ai_version = st.checkbox(
+                "Use AI to enhance the draft statements",
+                value=False, help="If you have a password, you can use AI to enhance your draft statements.")
+            if ai_version:
+                if check_password("ai"):
+                    if st.button("Draft AI Enhanced Values Statements"):
+                        try:
+                            client = genai.Client(api_key=api_key)
+                                                
+                            response = client.models.generate_content(
+                                model="gemini-2.0-flash",
+                                contents=f"""Rephrase each of the following statements to convey a draft essence of the user\'s core values. Return only numbered rephrased versions, not other comments or information.:
+                                Statement 1: {statement1},
+                                Statement 2: {statement2}"""
+                            )
+                            draft_statements = response.text.strip()
+                            st.session_state.ai_draft_statements = draft_statements                 
 
-                    except Exception as e:
-                        st.error(f"An error occurred during the LLM call: {e}")
-                else:
-                    st.info("Please select exactly two core values to create your buckets.")
-                if st.session_state.get("ai_draft_statements"):
-                    st.write("### AI Enhanced Statements")
-                    st.write(st.session_state.ai_draft_statements)     
+                        except Exception as e:
+                            st.error(f"An error occurred during the LLM call: {e}")
+                    # else:
+                    #     st.info("Please select exactly two core values to create your buckets.")
+                    if st.session_state.get("ai_draft_statements"):
+                        st.write("### AI Enhanced Statements")
+                        st.write(st.session_state.ai_draft_statements)     
 
     # Provide a download button if draft statements exist
     if "draft_statements" in st.session_state or "ai_draft_statements" in st.session_state:
@@ -208,10 +258,10 @@ with col3:
             document.add_heading("Draft Statements", level=1)
             draft = st.session_state.get("draft_statements", "No draft statements generated.")
             document.add_paragraph(draft)
-            if ai_enabled:
-                ai = st.session_state.get("ai_draft_statements", "No AI draft statements generated.")
-                document.add_heading("AI Enhanced Draft Statements", level=2)
-                document.add_paragraph(ai)                      
+
+            ai = st.session_state.get("ai_draft_statements", "No AI draft statements generated.")
+            document.add_heading("AI Enhanced Draft Statements", level=2)
+            document.add_paragraph(ai)                      
             
             # Save the document to a BytesIO buffer and return
             buffer = io.BytesIO()
