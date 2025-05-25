@@ -5,10 +5,23 @@ from docx import Document
 
 st.set_page_config(page_title="Value Cards App", page_icon="🔮", layout="wide")
 st.title("Value Cards App")
+pdf_path = "guides/Mental_Flexibility_One_Pager_Attributed_Updated.pdf"
 st.info(
-    """Select your core values from each category below. Toggle the items you resonate with, and your Tier 2 values will update on the right side. 
-    To apply your personal values as part of a resilience strategy, see the [Mental Flexibility guide](static/Mental_Flexibility_One_Pager_Attributed_Updated.pdf)."""
+    """Select your core values from each category below. Toggle the items you resonate with, and your Tier 2 values will update on the right side.
+    To apply your personal values as part of a resilience strategy, download the Mental Flexibility guide."""
 )
+
+try:
+    with open(pdf_path, "rb") as file:
+        st.download_button(
+            label="Download Mental Flexibility Guide (PDF)",
+            data=file,
+            file_name="Mental_Flexibility_One_Pager_Attributed_Updated.pdf",
+            mime="application/pdf",
+        )
+except FileNotFoundError:
+    st.error(f"Error: The file {pdf_path} was not found. Please ensure the file exists in the 'guides' directory.")
+
 
 
 # Store your password securely in an environment variable or secrets.toml
